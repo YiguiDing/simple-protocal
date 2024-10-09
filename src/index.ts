@@ -13,7 +13,6 @@ export class SimpleProtocalParser {
   private state!: number;
   private length!: number;
   private rawData!: number[];
-  private escapeNext!: boolean;
   private lengthH8!: number;
   private lengthL8!: number;
 
@@ -26,7 +25,6 @@ export class SimpleProtocalParser {
     this.state = this.STATES.START; // 初始状态
     this.length = 0; // 数据长度
     this.rawData = []; // 解码出的原始数据
-    this.escapeNext = false; // 标识是否遇到转义字节
   }
 
   // 编码器：将原始数据编码为符合协议格式的字节数组
@@ -42,20 +40,13 @@ export class SimpleProtocalParser {
     let lengthL8 = length & 0xff; // 低位
     encodedData.push(lengthH8, lengthL8);
 
-    // 添加转义处理过的原始数据
+    // 添加原始数据
     for (let byte of data) {
-      if (byte === 0x7d) {
-        encodedData.push(0x7d, 0x01); // 0x7d -> 0x7d 0x01
-      } else if (byte === 0x55) {
-        encodedData.push(0x7d, 0x02); // 0x55 -> 0x7d 0x02
-      } else if (byte === 0xaa) {
-        encodedData.push(0x7d, 0x03); // 0xAA -> 0x7d 0x03
-      } else {
-        encodedData.push(byte);
-      }
+      encodedData.push(byte);
     }
+
     // 计算并添加 CRC-8 校验码（从帧头开始）
-    let crc = this.crc_code([0x55, 0xaa, lengthH8, lengthL8, ...data]);
+    let crc = this.crc_code(encodedData);
     encodedData.push(crc);
     return encodedData;
   }
@@ -85,25 +76,7 @@ export class SimpleProtocalParser {
         this.state = this.STATES.DATA;
         break;
       case this.STATES.DATA:
-        if (this.escapeNext) {
-          // 处理转义字节
-          if (byte === 0x01) {
-            this.rawData.push(0x7d);
-          } else if (byte === 0x02) {
-            this.rawData.push(0x55);
-          } else if (byte === 0x03) {
-            this.rawData.push(0xaa);
-          } else {
-            this.reset(); // 转义错误，重置
-            return null;
-          }
-          this.escapeNext = false;
-        } else if (byte === 0x7d) {
-          this.escapeNext = true; // 下一个字节是转义字节
-        } else {
-          this.rawData.push(byte);
-        }
-
+        this.rawData.push(byte);
         // 如果原始数据长度等于定义的长度，则切换到 CRC 校验状态
         if (this.rawData.length === this.length) {
           this.state = this.STATES.CRC;
