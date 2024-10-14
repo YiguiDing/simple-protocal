@@ -1,0 +1,14 @@
+{
+  "configurations": [
+    {
+      "name": "Win32",
+      "compilerPath": "${userHome}/AppData/Local/Arduino15/packages/arduino/tools/avr-gcc/7.3.0-atmel3.6.1-arduino7/bin/avr-cpp.exe",
+      "includePath": [
+        "${workspaceFolder}/**",
+        "${userHome}/AppData/Local/Arduino15/packages/arduino/**"
+      ],
+      "defines": ["_DEBUG", "UNICODE", "_UNICODE", "USBCON"]
+    }
+  ],
+  "version": 4
+}

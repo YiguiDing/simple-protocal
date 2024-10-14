@@ -45,8 +45,8 @@ export class SimpleProtocalParser {
       encodedData.push(byte);
     }
 
-    // 计算并添加 CRC-8 校验码（从帧头开始）
-    let crc = this.crc_code(encodedData);
+    // 计算并添加 CRC-8 校验码（仅对原始数据计算）
+    let crc = this.crc_code(data);
     encodedData.push(crc);
     return encodedData;
   }
@@ -56,7 +56,7 @@ export class SimpleProtocalParser {
     switch (this.state) {
       case this.STATES.START:
         this.state = this.STATES.HEAD_1;
-        // break;
+      // break;
       case this.STATES.HEAD_1:
         if (byte === 0x55) {
           this.state = this.STATES.HEAD_2;
@@ -86,13 +86,7 @@ export class SimpleProtocalParser {
         }
         break;
       case this.STATES.CRC:
-        let crc = this.crc_code([
-          0x55,
-          0xaa,
-          this.lengthH8,
-          this.lengthL8,
-          ...this.rawData,
-        ]);
+        let crc = this.crc_code(this.rawData);
         if (crc === byte) {
           let result = this.rawData.slice(); // 返回解码的原始数据
           this.reset(); // 解码完成，重置状态
@@ -106,7 +100,7 @@ export class SimpleProtocalParser {
   }
 
   // CRC-8 校验计算
-  private crc_code(data: number[]): number {
+  private crc_code(data: number[] | Buffer): number {
     let crc = 0x00;
     for (let byte of data) {
       crc ^= byte;
