@@ -28,7 +28,7 @@ export class SimpleProtocalParser {
   }
 
   // 编码器：将原始数据编码为符合协议格式的字节数组
-  public encoder(data: number[]): number[] {
+  public encoder(data: number[] | Buffer): number[] {
     let encodedData: number[] = [];
 
     // 添加帧头 0x55 0xAA
@@ -55,11 +55,14 @@ export class SimpleProtocalParser {
   public decoder(byte: number): number[] | null {
     switch (this.state) {
       case this.STATES.START:
+        this.state = this.STATES.HEAD_1;
+        // break;
+      case this.STATES.HEAD_1:
         if (byte === 0x55) {
-          this.state = this.STATES.HEAD_1;
+          this.state = this.STATES.HEAD_2;
         }
         break;
-      case this.STATES.HEAD_1:
+      case this.STATES.HEAD_2:
         if (byte === 0xaa) {
           this.state = this.STATES.LENGTH_H8;
         } else {
